@@ -16,7 +16,7 @@ import math
 from collections import defaultdict
 from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import AutoTokenizer
-from transformers import AutoModelForCausalLM, LlamaForCausalLM
+from transformers import AutoModelForCausalLM, LlamaForCausalLM, LlamaTokenizer
 from component.collator import PretrainCollator, SFTCollator
 from component.dataset import PretrainDataset, VicunaSFTDataset
 from component.argument import LongQLoRAArguments
@@ -242,6 +242,15 @@ def init_components(args, training_args):
     )
     return trainer
 
+def test_data_load():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train_args_file", type=str, default='./train_args/llama2-7b-pretrain.yaml', help="")
+    parser.add_argument("--local_rank", type=int, default=0, help="")
+    args = parser.parse_args()
+    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,trust_remote_code=True) 
+    train_dataset = VicunaSFTDataset(args.train_file, tokenizer, args.max_seq_length)
+    data_collator = SFTCollator(tokenizer, args.max_seq_length, -100)
+
 
 def main():
     # 进行一些配置和检查
@@ -261,4 +270,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    #main()
+    test_data_load()

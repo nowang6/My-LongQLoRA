@@ -1,6 +1,6 @@
 output_dir: ./output/LongQLoRA-Llama2-7b-8k
-model_name_or_path: NousResearch/Llama-2-7b-hf
-train_file: ./data/pretrain/pretrain_dummy_data.jsonl
+model_name_or_path: meta-llama/Llama-2-7b-hf
+train_file: ./data/paper_review_data_longqlora.jsonl
 deepspeed: ./train_args/deepspeed/deepspeed_config_s2.json
 sft: false
 

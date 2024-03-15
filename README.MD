@@ -151,3 +151,14 @@ Examples of short context generartion, model keep the performance of short instr
 - This work combines the advantages of [QLoRA](https://github.com/artidoro/qlora), [Position Interpolation](https://arxiv.org/abs/2306.15595) and [LongLoRA](https://github.com/dvlab-research/LongLoRA)
 - The code of Shift Short Attention is implemented by [LongLoRA](https://github.com/dvlab-research/LongLoRA)
 - The training code is modified upon [Firefly](https://github.com/yangjianxin1/Firefly)
+
+
+```bash
+conda create -n longqlora python=3.9 pip
+## 单独安装pytorch 
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117 -i
+## 单独安装flash attention
+pip install flash_attn 
+## 安装requirements
+pip install -r requirements.txt
+```
