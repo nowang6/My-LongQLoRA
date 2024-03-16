@@ -132,11 +132,12 @@ def load_model_and_tokenizer(args, training_args):
 
     # 加载模型
     logger.info(f'Loading model from: {args.model_name_or_path}')
+    access_token = os.getenv('HF_TOKEN') 
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name_or_path,
+        token = access_token,
         config=config,
         device_map=device_map,
-        load_in_4bit=True,
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
         quantization_config=BitsAndBytesConfig(
@@ -152,6 +153,7 @@ def load_model_and_tokenizer(args, training_args):
     # 加载tokenizer
     tokenizer = AutoTokenizer.from_pretrained(
         args.model_name_or_path,
+        token = access_token,
         model_max_length=args.model_max_length,
         padding_side="right",
         # use_fast=True,
