@@ -18,7 +18,7 @@ from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from transformers import AutoTokenizer
 from transformers import AutoModelForCausalLM, LlamaForCausalLM, LlamaTokenizer
 from component.collator import PretrainCollator, SFTCollator
-from component.dataset import PretrainDataset, VicunaSFTDataset
+from component.dataset import LlamaSFTDataset
 from component.argument import LongQLoRAArguments
 from component.trainer import LoRATrainer
 from component.loss import CausalLMLoss
@@ -137,11 +137,11 @@ def load_model_and_tokenizer(args, training_args):
         config=config,
         device_map=device_map,
         load_in_4bit=True,
-        torch_dtype=torch.float16,
+        torch_dtype=torch.bfloat16,
         trust_remote_code=True,
         quantization_config=BitsAndBytesConfig(
             load_in_4bit=True,
-            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_compute_dtype=torch.bfloat16,
             bnb_4bit_use_double_quant=True,
             bnb_4bit_quant_type="nf4",
             llm_int8_threshold=6.0,
@@ -224,12 +224,8 @@ def init_components(args, training_args):
     loss_func = CausalLMLoss(ignore_index=-100)
 
     # 加载训练集和验证集
-    if args.sft:
-        train_dataset = VicunaSFTDataset(args.train_file, tokenizer, args.max_seq_length)
-        data_collator = SFTCollator(tokenizer, args.max_seq_length, -100)
-    else:
-        train_dataset = PretrainDataset(args.train_file, tokenizer, args.max_seq_length)
-        data_collator = PretrainCollator(tokenizer, args.max_seq_length, -100)
+    train_dataset = LlamaSFTDataset(args.train_file, tokenizer, args.max_seq_length)
+    data_collator = SFTCollator(tokenizer, args.max_seq_length, -100)
 
     # 初始化Trainer
     trainer = LoRATrainer(
@@ -247,9 +243,15 @@ def test_data_load():
     parser.add_argument("--train_args_file", type=str, default='./train_args/llama2-7b-pretrain.yaml', help="")
     parser.add_argument("--local_rank", type=int, default=0, help="")
     args = parser.parse_args()
-    tokenizer = LlamaTokenizer.from_pretrained(args.model_name_or_path,trust_remote_code=True) 
-    train_dataset = VicunaSFTDataset(args.train_file, tokenizer, args.max_seq_length)
-    data_collator = SFTCollator(tokenizer, args.max_seq_length, -100)
+    connfig = None
+    with open(args.train_args_file, 'r') as f:
+        config = yaml.safe_load(f)
+    tokenizer = LlamaTokenizer.from_pretrained(config["model_name_or_path"],trust_remote_code=True) 
+    train_dataset = LlamaSFTDataset(config["train_file"], tokenizer, config["max_seq_length"])
+    data_collator = SFTCollator(tokenizer, config["max_seq_length"], -100)
+    for i in range(len(train_dataset)):
+        train_dataset[i]
+    
 
 
 def main():
@@ -270,5 +272,5 @@ def main():
 
 
 if __name__ == "__main__":
-    #main()
-    test_data_load()
+    main()
+    

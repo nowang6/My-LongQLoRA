@@ -154,11 +154,13 @@ Examples of short context generartion, model keep the performance of short instr
 
 
 ```bash
-conda create -n longqlora python=3.9 pip
+conda create -n longqlora1 python=3.9 pip
 ## 单独安装pytorch 
-pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117 -i
+pip install torch==1.13.0+cu117 torchvision==0.14.0+cu117 torchaudio==0.13.0 --extra-index-url https://download.pytorch.org/whl/cu117
 ## 单独安装flash attention
-pip install flash_attn 
+pip install packaging flash_attn 
 ## 安装requirements
 pip install -r requirements.txt
 ```
+
+export LD_LIBRARY_PATH=/usr/local/cuda-11.1/targets/x86_64-linux/lib

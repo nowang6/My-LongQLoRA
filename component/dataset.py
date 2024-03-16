@@ -2,6 +2,7 @@ from loguru import logger
 import json
 from torch.utils.data import Dataset
 import numpy as np
+import math
 
 
 class PretrainDataset(Dataset):
@@ -131,36 +132,49 @@ class LlamaSFTDataset(Dataset):
 
         logger.info("there are {} data in dataset".format(len(data_list)))
         self.data_list = data_list
-        self.input_template = "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.\nUSER: {input}\nASSISTANT: "
-
+        self.input_template = "You are a professional machine learning conference reviewer who reviews a given paper and considers 4 criteria: \
+            ** importance and novelty **, ** potential reasons for acceptance **, ** potential reasons for rejection **, and ** suggestions for improvement **.\
+                \n The given paper is as follows:\n{input}\n"
+        self.out_template = "Review result:\n{output}\n"
+        
+        
     def __len__(self):
         return len(self.data_list)
 
     def __getitem__(self, index):
-        """
-        沿袭Vicuna的的格式。
-        A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions.
-        USER: xxx
-        ASSISTANT: xxx
-        """
         data = self.data_list[index]
         data = json.loads(data)
-        inputs = data['input'].strip()
+        input = data['input'].strip()
         output = data['output'].strip()
-        # 输入部分
-        input_format = self.input_template.format(input=inputs)
-
-        input_format_ids = self.tokenizer(input_format, add_special_tokens=False).input_ids
-        output_ids = self.tokenizer(output, add_special_tokens=False).input_ids + [self.eos_token_id]
-
-        input_ids = input_format_ids + output_ids
-        labels = [self.ignore_index] * len(input_format_ids) + output_ids
+    
+        #组装prmopt    
+        input_format = self.input_template.format(input=input)
+        output_format = self.out_template.format(output=output)
+        #分词
+        input_ids = self.tokenizer(input_format, add_special_tokens=False).input_ids
+        output_ids = self.tokenizer(output_format, add_special_tokens=False).input_ids 
+        
+        input_len = len(input_ids)
+        output_len = len(output_ids)
+        total_len =  input_len + output_len
+        #超长，需要cut, 预留一个给eos
+        if total_len > self.max_seq_length - 1:
+            #cut比例
+            scale_size = total_len / (self.max_seq_length - 1)
+            #print(f"Cut begin, input: {input_len}, output: {output_len}, total: {input_len + output_len}")
+            input_ids = input_ids[:math.floor(input_len/scale_size)] 
+            output_ids =  output_ids[:math.floor(output_len/scale_size)] 
+        output_ids += [self.eos_token_id]
+        #print(f"input: {len(input_ids)}, output: {len(output_ids)}, total: {len(input_ids) + len(output_ids)}")
+        
+        labels = [self.ignore_index] * len(input_ids) + output_ids
+        input_ids = input_ids + output_ids
+        
         assert len(input_ids) == len(labels)
-
-        # 对长度进行截断
-        input_ids = input_ids[:self.max_seq_length]
-        labels = labels[:self.max_seq_length]
+        assert len(input_ids) <= self.max_seq_length
         attention_mask = [1] * len(input_ids)
+
+    
         # padding
         padding_len = self.max_seq_length - len(input_ids)
         input_ids += [self.pad_token_id] * padding_len

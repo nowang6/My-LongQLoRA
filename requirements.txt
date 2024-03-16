@@ -18,5 +18,4 @@ httpx
 # flash_attn==2.3.3
 joblib==1.2.0
 scikit_learn==0.24.2
-
 # 之所以上面把torch和flash_attn注释掉了，因为会单独安装，详见群文件里第16课 PDF(里面还会创建虚拟环境：conda create -n longqlora python=3.9 pip)
